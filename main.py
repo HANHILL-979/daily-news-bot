@@ -1,17 +1,15 @@
 import os
 import smtplib
 import feedparser
-import google.generativeai as genai
+from google import genai
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 
-# 1. 配置 Gemini (使用最稳定的 generativeai 库)
-genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-2.0-flash') # 也可以用 gemini-2.0-flash-exp
+# 1. 使用最新 SDK 规范初始化客户端
+client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
 
 def get_tech_news():
-    """获取科技早报"""
     feed = feedparser.parse("https://36kr.com/feed")
     html = "<h2 style='color: #2c3e50; border-bottom: 2px solid #3498db;'>🚀 今日科技热点</h2><ul>"
     for entry in feed.entries[:5]:
@@ -20,10 +18,8 @@ def get_tech_news():
     return html
 
 def get_cet6_article():
-    """利用 AI 生成 CET-6 水平的阅读全文"""
-    # 抓取英文素材
     eng_feed = feedparser.parse("https://www.sciencedaily.com/rss/computers_math/artificial_intelligence.xml")
-    raw_material = eng_feed.entries[0].summary if eng_feed.entries else "The advancement of technology in 2026."
+    raw_material = eng_feed.entries[0].summary if eng_feed.entries else "The advancement of technology."
 
     prompt = f"""
     Based on the following material, write a formal English passage.
@@ -36,8 +32,11 @@ def get_cet6_article():
     5. Output: Strictly English only.
     """
     
-    # 稳定的调用方式
-    response = model.generate_content(prompt)
+    # 2. 调用当前可用的最新模型
+    response = client.models.generate_content(
+        model='gemini-2.0-flash', 
+        contents=prompt
+    )
     ai_text = response.text.replace('\n', '<br>')
     
     html = f"""
@@ -53,7 +52,8 @@ def send_email(tech_body, eng_body):
     password = os.environ.get('GMAIL_PASS')
     
     msg = MIMEMultipart()
-    msg['Subject'] = Header(f"【{os.environ.get('GITHUB_RUN_NUMBER')}期】每日科技与 CET6 专刊", 'utf-8')
+    msg['Subject'] = Header(f"【{os.environ.get('GITHUB_RUN_NUMBER', 'Local')}期】每日科技与 CET6 专刊", 'utf-8')
+    # 3. 整合个人数字身份 hqh
     msg['From'] = f"hqh-Daily-Bot <{sender}>"
     msg['To'] = sender
 
@@ -64,7 +64,7 @@ def send_email(tech_body, eng_body):
             {eng_body}
             <p style='text-align: center; color: #95a5a6; font-size: 12px; margin-top: 40px;'>
                 Powered by GitHub Actions & Gemini AI<br>
-                Keep studying, Huang!
+                Keep studying, hqh.
             </p>
         </body>
     </html>
@@ -80,8 +80,5 @@ if __name__ == "__main__":
         t_html = get_tech_news()
         e_html = get_cet6_article()
         send_email(t_html, e_html)
-        print("Success: Email sent!")
     except Exception as e:
-        print(f"Error: {e}")
-        # 这里故意抛出错误让 GitHub Action 标记为失败以便查看日志
         raise e
