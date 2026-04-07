@@ -1,13 +1,13 @@
 import os
 import smtplib
 import feedparser
-from google import genai
+from zhipuai import ZhipuAI
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 
-# 1. 使用最新 SDK 规范初始化客户端
-client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
+# 1. 初始化智谱客户端
+client = ZhipuAI(api_key=os.environ.get('ZHIPU_API_KEY'))
 
 def get_tech_news():
     feed = feedparser.parse("https://36kr.com/feed")
@@ -19,25 +19,28 @@ def get_tech_news():
 
 def get_cet6_article():
     eng_feed = feedparser.parse("https://www.sciencedaily.com/rss/computers_math/artificial_intelligence.xml")
-    raw_material = eng_feed.entries[0].summary if eng_feed.entries else "The advancement of technology."
+    raw_material = eng_feed.entries[0].summary if eng_feed.entries else "The evolution of modern computing."
 
+    # 针对智谱优化的 Prompt，强调客观与 CET-6 难度
     prompt = f"""
-    Based on the following material, write a formal English passage.
-    Material: {raw_material}
+    You are an objective academic editor. Based on the material: {raw_material}
+    Task: Write a formal English passage.
     Requirements:
-    1. Level: Strictly CET-6 difficulty. 
-    2. Style: Academic with complex sentences (subjunctive, inversions).
-    3. Length: 250 words.
-    4. Format: Title + Passage + 'Vocabulary & Expressions' list (5-8 difficult CET-6 words with English meanings).
-    5. Output: Strictly English only.
+    1. Level: Strictly CET-6 (College English Test Band 6) difficulty.
+    2. Tone: Scientific, impartial, and factual. Avoid flowery language.
+    3. Structure: Title + 250-word Passage + 'Vocabulary' list (6 key CET-6 words with meanings).
+    4. Output: Strictly English only.
     """
     
-    # 2. 调用当前可用的最新模型
-    response = client.models.generate_content(
-        model='gemini-2.0-flash', 
-        contents=prompt
+    # 2. 调用智谱 GLM-5 模型 (2026年旗舰版)
+    response = client.chat.completions.create(
+        model='glm-5', 
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3, # 保持低温度以确保输出的严谨性
+        top_p=0.7
     )
-    ai_text = response.text.replace('\n', '<br>')
+    
+    ai_text = response.choices[0].message.content.replace('\n', '<br>')
     
     html = f"""
     <h2 style='color: #e67e22; border-bottom: 2px solid #e67e22;'>📖 CET-6 Daily Reading</h2>
@@ -52,9 +55,8 @@ def send_email(tech_body, eng_body):
     password = os.environ.get('GMAIL_PASS')
     
     msg = MIMEMultipart()
-    msg['Subject'] = Header(f"【{os.environ.get('GITHUB_RUN_NUMBER', 'Local')}期】每日科技与 CET6 专刊", 'utf-8')
-    # 3. 整合个人数字身份 hqh
-    msg['From'] = f"hqh-Daily-Bot <{sender}>"
+    msg['Subject'] = Header(f"【{os.environ.get('GITHUB_RUN_NUMBER', 'Local')}期】hqh 每日早报", 'utf-8')
+    msg['From'] = f"hqh-Intelligence-Bot <{sender}>"
     msg['To'] = sender
 
     full_html = f"""
@@ -63,8 +65,8 @@ def send_email(tech_body, eng_body):
             {tech_body}
             {eng_body}
             <p style='text-align: center; color: #95a5a6; font-size: 12px; margin-top: 40px;'>
-                Powered by GitHub Actions & Gemini AI<br>
-                Keep studying, hqh.
+                Powered by GitHub Actions & Zhipu AI (GLM-5)<br>
+                Keep advancing, hqh.
             </p>
         </body>
     </html>
@@ -81,4 +83,5 @@ if __name__ == "__main__":
         e_html = get_cet6_article()
         send_email(t_html, e_html)
     except Exception as e:
+        print(f"Error occurred: {e}")
         raise e
