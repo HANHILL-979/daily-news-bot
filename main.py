@@ -8,7 +8,7 @@ from email.header import Header
 
 # 1. 配置 Gemini (使用最稳定的 generativeai 库)
 genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-1.5-flash') # 也可以用 gemini-2.0-flash-exp
+model = genai.GenerativeModel('gemini-3.0-flash') # 也可以用 gemini-2.0-flash-exp
 
 def get_tech_news():
     """获取科技早报"""
@@ -54,7 +54,7 @@ def send_email(tech_body, eng_body):
     
     msg = MIMEMultipart()
     msg['Subject'] = Header(f"【{os.environ.get('GITHUB_RUN_NUMBER')}期】每日科技与 CET6 专刊", 'utf-8')
-    msg['From'] = f"Daily Bot <{sender}>"
+    msg['From'] = f"hqh-Daily-Bot <{sender}>"
     msg['To'] = sender
 
     full_html = f"""
