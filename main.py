@@ -8,7 +8,7 @@ from email.header import Header
 
 # 1. 配置 Gemini (使用最稳定的 generativeai 库)
 genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-3.0-flash') # 也可以用 gemini-2.0-flash-exp
+model = genai.GenerativeModel('gemini-2.0-flash') # 也可以用 gemini-2.0-flash-exp
 
 def get_tech_news():
     """获取科技早报"""
