@@ -2,8 +2,8 @@ name: Daily Report Service
 
 on:
   schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
+    - cron: '0 0 * * *' # 每天北京时间早上8点运行
+  workflow_dispatch: # 支持手动触发测试
 
 jobs:
   build:
@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # 升级至 3.11 消除警告
+          python-version: '3.11'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -24,5 +24,5 @@ jobs:
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }} # 对应智谱的密钥
         run: python main.py
