@@ -4,7 +4,7 @@ on:
   schedule:
     # 北京时间早上 8:00 (对应 UTC 0:00)
     - cron: '0 0 * * *'
-  workflow_dispatch: # 允许手动点按钮运行
+  workflow_dispatch: # 允许手动点击按钮运行测试
 
 jobs:
   build:
@@ -23,6 +23,8 @@ jobs:
 
       - name: Run sender script
         env:
+          # 这三个变量必须与你在 GitHub Secrets 中设置的名字完全一致
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
         run: python main.py
